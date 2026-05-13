@@ -1,23 +1,18 @@
-import { Pool } from 'pg'
-import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../generated/prisma/edge'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg-cloudflare'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+const connectionString = process.env.DATABASE_URL
 
-function createPrismaClient() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // 移除 SSL 配置，因为 Supabase 的 6543 连接池代理已经不支持直接的 SSL 握手协商
+const pool = new Pool({ connectionString })
+const adapter = new PrismaPg(pool)
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    adapter
   })
-  const adapter = new PrismaPg(pool)
-  return new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  })
-}
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
