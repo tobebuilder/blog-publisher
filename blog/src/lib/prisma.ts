@@ -1,11 +1,9 @@
 import { PrismaClient } from '../generated/prisma/edge'
 import { PrismaPg } from '@prisma/adapter-pg'
-import * as pg from 'pg-cloudflare'
+import { Pool } from 'pg'
 
 const connectionString = process.env.DATABASE_URL
 
-// 兼容不同的导出格式
-const Pool = (pg as any).Pool || (pg as any).default?.Pool || (pg as any).default
 const pool = new Pool({ connectionString })
 const adapter = new PrismaPg(pool)
 
